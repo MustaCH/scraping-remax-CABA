@@ -63,28 +63,24 @@ async function getMaxPages() {
 
         await page.goto(firstPageUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
 
-        const ngStateSelector = 'script#ng-state';
-        await page.waitForSelector(ngStateSelector, { timeout: 10000 });
-        const ngStateContent = await page.$eval(ngStateSelector, el => el.textContent);
-        const jsonData = JSON.parse(ngStateContent);
+        // Esperamos el elemento que contiene el texto "Página X de Y"
+        const paginatorSelector = 'qr-pagination p';
+        await page.waitForSelector(paginatorSelector, { timeout: 10000 });
 
-        let totalPages = null;
+        // Extraemos el texto, ej: "Página 1 de 174"
+        const paginatorText = await page.$eval(paginatorSelector, el => el.innerText);
+        console.log(`🔍 Texto del paginador: "${paginatorText}"`);
 
-        for (const value of Object.values(jsonData)) {
-            const tp = value?.b?.data?.totalPages;
-            if (typeof tp === 'number') {
-                totalPages = tp;
-                break;
-            }
-        }
-
-        if (totalPages) {
-            console.log(`✅ Total de páginas encontrado en ng-state: ${totalPages}`);
+        // Extraemos el número total usando una regex
+        const match = paginatorText.match(/de\s+(\d+)/i);
+        if (match && match[1]) {
+            const totalPages = parseInt(match[1], 10);
+            console.log(`✅ Total de páginas detectado: ${totalPages}`);
             return totalPages;
+        } else {
+            console.warn('⚠️ No se pudo extraer el número total de páginas. Usando fallback.');
+            return 175;
         }
-
-        console.warn('⚠️ No se encontró totalPages en ng-state. Usando fallback.');
-        return 175;
 
     } catch (err) {
         console.warn(`⚠️ Error en getMaxPages: ${err.message}. Usando fallback.`);
@@ -95,7 +91,8 @@ async function getMaxPages() {
             console.log('getMaxPages: Navegador efímero cerrado.');
         }
     }
-}
+};
+
 
 // 🔍 Scrapeo robusto de propiedades página por página usando ng-state
 async function scrapeRemax(startPage = 0, endPage) {
