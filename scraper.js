@@ -65,7 +65,7 @@ async function getMaxPages() {
 
         // Esperamos el elemento que contiene el texto "Página X de Y"
         const paginatorSelector = 'p-container-paginator';
-        await page.waitForSelector(paginatorSelector, { timeout: 10000 });
+        // await page.waitForSelector(paginatorSelector, { timeout: 10000 });
 
         // Extraemos el texto, ej: "Página 1 de 174"
         const paginatorText = await page.$eval(paginatorSelector, el => el.innerText);
