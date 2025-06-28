@@ -15,7 +15,7 @@ const launchOptions = {
 
 // ✅ Función mejorada para extraer propiedades
 const extractData = async (page) => {
-    const selector = process.env.NODE_DATA_SELECTOR;
+    const selector = `${process.env.NODE_DATA_SELECTOR}`;
     await page.waitForSelector(selector, { state: 'attached', timeout: 30000 });
     const content = await page.$eval(selector, el => el.textContent);
     
