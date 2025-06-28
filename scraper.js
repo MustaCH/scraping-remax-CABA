@@ -13,17 +13,17 @@ const launchOptions = {
     ]
 };
 
-// ✅ Función mejorada para extraer propiedades desde ng-state
-const extractNgStateData = async (page) => {
-    const ngStateSelector = 'script#ng-state';
-    await page.waitForSelector(ngStateSelector, { state: 'attached', timeout: 30000 });
-    const ngStateContent = await page.$eval(ngStateSelector, el => el.textContent);
+// ✅ Función mejorada para extraer propiedades
+const extractData = async (page) => {
+    const selector = process.env.NODE_DATA_SELECTOR;
+    await page.waitForSelector(selector, { state: 'attached', timeout: 30000 });
+    const content = await page.$eval(selector, el => el.textContent);
     
     let jsonData;
     try {
-        jsonData = JSON.parse(ngStateContent);
+        jsonData = JSON.parse(content);
     } catch (e) {
-        throw new Error('❌ No se pudo parsear ng-state como JSON');
+        throw new Error('❌ No se pudo parsear como JSON');
     }
 
     const allDataEntries = [];
@@ -39,12 +39,12 @@ const extractNgStateData = async (page) => {
     }
 
     if (allDataEntries.length === 0) {
-        throw new Error('❌ No se encontraron bloques válidos dentro de ng-state');
+        throw new Error('❌ No se encontraron bloques válidos dentro de selector');
     }
 
     const mainBlock = allDataEntries.reduce((a, b) => (b.data.length > a.data.length ? b : a));
 
-    console.log(`✅ ng-state: usando clave "${mainBlock.key}" con ${mainBlock.data.length} propiedades`);
+    console.log(`✅ selector: usando clave "${mainBlock.key}" con ${mainBlock.data.length} propiedades`);
 
     return mainBlock.data;
 };
@@ -113,7 +113,7 @@ async function scrapeRemax(startPage = 0, endPage) {
 
                 await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 });
 
-                const propertiesData = await extractNgStateData(page);
+                const propertiesData = await extractData(page);
 
                 if (!propertiesData || propertiesData.length === 0) {
                     console.log(`  -> ⚠️ Página vacía. Finalizando.`);
