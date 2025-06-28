@@ -64,27 +64,27 @@ async function getMaxPages() {
         await page.goto(firstPageUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
 
         // Esperamos el elemento que contiene el texto "Página X de Y"
-        const paginatorSelector = '.p-container-paginator p';
-        await page.querySelector(paginatorSelector, { timeout: 10000 });
+        const paginatorSelector = 'qr-pagination p';
+        await page.waitForSelector(paginatorSelector, { timeout: 10000 });
 
         // Extraemos el texto, ej: "Página 1 de 174"
         const paginatorText = await page.$eval(paginatorSelector, el => el.innerText);
         console.log(`🔍 Texto del paginador: "${paginatorText}"`);
 
-        // Extraemos el número total usando una regex
-        const match = paginatorText.match(/de\s+(\d+)/i);
+        // Extraemos el número de páginas
+        const match = text.match(/de\s+(\d+)/i);
         if (match && match[1]) {
             const totalPages = parseInt(match[1], 10);
             console.log(`✅ Total de páginas detectado: ${totalPages}`);
             return totalPages;
         } else {
             console.warn('⚠️ No se pudo extraer el número total de páginas. Usando fallback.');
-            return 175;
+            return 775;
         }
 
     } catch (err) {
         console.warn(`⚠️ Error en getMaxPages: ${err.message}. Usando fallback.`);
-        return 175;
+        return 775;
     } finally {
         if (browser) {
             await browser.close();
