@@ -18,7 +18,7 @@ const extractData = async (page) => {
     const selector = 'script#ng-state';
     await page.waitForSelector(selector, { state: 'attached', timeout: 30000 });
     const content = await page.$eval(selector, el => el.textContent);
-    
+
     let jsonData;
     try {
         jsonData = JSON.parse(content);
@@ -43,36 +43,31 @@ const extractData = async (page) => {
     }
 
     const mainBlock = allDataEntries.reduce((a, b) => (b.data.length > a.data.length ? b : a));
-
     console.log(`✅ selector: usando clave "${mainBlock.key}" con ${mainBlock.data.length} propiedades`);
 
     return mainBlock.data;
 };
 
-// 🚀 Obtener número total de páginas desde la clave que contiene ese dato
-async function getMaxPages() {
+// 🚀 Obtener número total de páginas para un operationId
+async function getMaxPages(operationId = 1) {
     let browser;
-    console.log('getMaxPages: Iniciando navegador efímero...');
+    console.log(`getMaxPages: Iniciando navegador efímero para operationId=${operationId}...`);
     try {
         browser = await chromium.launch(launchOptions);
         const page = await browser.newPage({
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
         });
 
-        const firstPageUrl = `https://www.remax.com.ar/listings/buy?page=0&pageSize=24&sort=-createdAt&in:operationId=1&in:eStageId=0,1,2,3,4&locations=in:CF@%3Cb%3ECapital%3C%2Fb%3E%20%3Cb%3EFederal%3C%2Fb%3E::::::&landingPath=&filterCount=0&viewMode=listViewMode`;
+        const firstPageUrl = `https://www.remax.com.ar/listings/${operationId === 1 ? 'buy' : 'rent'}?page=0&pageSize=24&sort=-createdAt&in:operationId=${operationId}&in:eStageId=0,1,2,3,4&locations=in:CF@%3Cb%3ECapital%3C%2Fb%3E%20%3Cb%3EFederal%3C%2Fb%3E::::::&landingPath=&filterCount=0&viewMode=listViewMode`;
 
         await page.goto(firstPageUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
 
-        // Esperamos el elemento que contiene el texto "Página X de Y"
         const paginatorSelector = '.p-container-paginator p';
         await page.waitForSelector(paginatorSelector, { timeout: 10000 });
-
-        // Extraemos el texto, ej: "Página 1 de 174"
         const paginatorText = await page.$eval(paginatorSelector, el => el.innerText);
         console.log(`🔍 Texto del paginador: "${paginatorText}"`);
 
-        // Extraemos el número de páginas
-        const match = text.match(/de\s+(\d+)/i);
+        const match = paginatorText.match(/de\s+(\d+)/i);
         if (match && match[1]) {
             const totalPages = parseInt(match[1], 10);
             console.log(`✅ Total de páginas detectado: ${totalPages}`);
@@ -91,13 +86,12 @@ async function getMaxPages() {
             console.log('getMaxPages: Navegador efímero cerrado.');
         }
     }
-};
+}
 
-
-// 🔍 Scrapeo robusto de propiedades página por página usando ng-state
-async function scrapeRemax(startPage = 0, endPage) {
+// 🔍 Scraper robusto que admite operationId dinámico
+async function scrapeRemax(startPage = 0, endPage, operationId = 1) {
     let browser;
-    console.log(`scrapeRemax: Iniciando navegador efímero para páginas ${startPage} a ${endPage}...`);
+    console.log(`scrapeRemax: Iniciando navegador efímero para páginas ${startPage} a ${endPage}, operationId=${operationId}...`);
     try {
         browser = await chromium.launch(launchOptions);
         const page = await browser.newPage({
@@ -109,10 +103,9 @@ async function scrapeRemax(startPage = 0, endPage) {
         for (let currentPage = startPage; currentPage <= endPage; currentPage++) {
             try {
                 console.log(`🌐 Procesando página ${currentPage}...`);
-                const url = `https://www.remax.com.ar/listings/buy?page=${currentPage}&pageSize=24&sort=-createdAt&in:operationId=1&in:eStageId=0,1,2,3,4&locations=in:CF@%3Cb%3ECapital%3C%2Fb%3E%20%3Cb%3EFederal%3C%2Fb%3E::::::&landingPath=&filterCount=0&viewMode=listViewMode`;
+                const url = `https://www.remax.com.ar/listings/${operationId === 1 ? 'buy' : 'rent'}?page=${currentPage}&pageSize=24&sort=-createdAt&in:operationId=${operationId}&in:eStageId=0,1,2,3,4&locations=in:CF@%3Cb%3ECapital%3C%2Fb%3E%20%3Cb%3EFederal%3C%2Fb%3E::::::&landingPath=&filterCount=0&viewMode=listViewMode`;
 
                 await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 });
-
                 const propertiesData = await extractData(page);
 
                 if (!propertiesData || propertiesData.length === 0) {
