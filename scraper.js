@@ -55,7 +55,13 @@ async function getMaxPages(operationId = 1) {
     try {
         browser = await chromium.launch(launchOptions);
         const page = await browser.newPage({
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+             // ▼▼▼ MODIFICACIÓN INICIO ▼▼▼
+            // Se establece un viewport de móvil para asegurar que el paginador sea visible.
+            // El elemento tiene la clase "hide-gt-sm", que lo oculta en pantallas de escritorio.
+            // Al simular un dispositivo pequeño, evitamos que ese estilo CSS se aplique.
+            viewport: { width: 390, height: 844 }
+            // ▲▲▲ MODIFICACIÓN FIN ▲▲▲
         });
 
         const firstPageUrl = `https://www.remax.com.ar/listings/${operationId === 1 ? 'buy' : 'rent'}?page=0&pageSize=24&sort=-createdAt&in:operationId=${operationId}&in:eStageId=0,1,2,3,4&locations=in:CF@%3Cb%3ECapital%3C%2Fb%3E%20%3Cb%3EFederal%3C%2Fb%3E::::::&landingPath=&filterCount=0&viewMode=listViewMode`;
